@@ -529,10 +529,18 @@ static int getArrayLen(lua_State *L)
 	return 1;
 }
 
+//
+static int array2string(lua_State *L)
+{
+	NumArray *a = checkArray(L);
+	lua_pushfstring(L, "array(%d)", a->size);
+	return 1;
+}
+
 
 int luaopen_array(lua_State *L)
 {
-
+	cleanStack(L);
 	static const struct luaL_reg mylib_f[] = {
 		{"new",newArray},
 		{NULL,NULL},
@@ -542,18 +550,54 @@ int luaopen_array(lua_State *L)
 		{"set",setArray},
 		{"get",getArray},
 		{"size",getArrayLen},
+		{ "__tostring",array2string },
 		{NULL,NULL},
 	};
-
+	
 	luaL_newmetatable(L,twarray);
-
 	lua_pushstring(L,"__index");
 	lua_pushvalue(L,-2);
 	lua_settable(L,-3); //metatable.__index = metatable
 
+	//stackInLine(L);
 	luaL_openlib(L,NULL,mylib_m,0);
+	
 	luaL_openlib(L,"array",mylib_f,0);
+
+	//stackInLine(L);
+	
+	/*lua_pushstring(L, "__index");
+	lua_pushstring(L, "get");
+	lua_gettable(L, 2);
+	lua_settable(L, 2);*/
 	return 1;
+}
+
+int luaopen_oriarray(lua_State *L)
+{
+	cleanStack(L);
+	static const struct luaL_reg mylib_m1[] = {
+		{ "new",newArray },
+		{ "set",setArray },
+		{ "get",getArray },
+		{ "size",getArrayLen },
+		{ "__tostring",array2string },
+		{ NULL,NULL },
+	};
+
+	luaL_newmetatable(L, "tworiarray");
+	luaL_openlib(L, "oriarray", mylib_m1,0);
+
+	lua_pushstring(L, "__index");
+	lua_pushstring(L, "get");
+	lua_gettable(L, 2);
+	lua_settable(L, 1);
+
+	lua_pushstring(L, "__newindex");
+	lua_pushstring(L, "set");
+	lua_gettable(L, 2);
+	lua_settable(L, 1);
+	return 0;
 }
 
 //open my lib
@@ -619,6 +663,7 @@ void main()
 	lua_setglobal(L,"mydir");*/
 	luaopen_mylib(L);
 	luaopen_array(L);
+	luaopen_oriarray(L);
 
 	printf("end to regester funciton\n");
 	
@@ -633,5 +678,6 @@ void main()
 
 	lua_close(L);
 
-	system("pause");
+	//system("pause");
+	getchar();
 }
